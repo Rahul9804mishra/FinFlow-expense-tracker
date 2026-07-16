@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>FinFlow — Enterprise Finance Platform</title>
+  <meta name="description" content="FinFlow – Smart enterprise-grade personal finance tracker" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- FinFlow Supabase client -->
+  <script src="supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Tesseract OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+
+  <!-- ONBOARDING OVERLAY -->
+  <div id="onboarding-overlay" class="onboarding-overlay hidden">
+    <div class="onboarding-card">
+      <div class="onboarding-logo">
+        <div class="logo-icon">◈</div>
+        <span>FinFlow</span>
+      </div>
+      <h2>Welcome aboard 👋</h2>
+      <p>Let's personalise your experience. What should we call you?</p>
+      <div class="input-group">
+        <label>Your name</label>
+        <input type="text" id="onboarding-name" placeholder="e.g. Rahul Mishra" maxlength="30" autocomplete="off" />
+      </div>
+      <button class="btn-primary full-width" id="onboarding-submit">Get Started →</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">◈</div>
+        <span class="logo-text">FinFlow</span>
+      </div>
+      <button class="sidebar-close" id="sidebar-close">✕</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="#" class="nav-item active" data-section="dashboard">
+        <div class="nav-icon">⬡</div>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-section="expenses">
+        <div class="nav-icon">◎</div>
+        <span>Expenses</span>
+      </a>
+      <a href="#" class="nav-item" data-section="income">
+        <div class="nav-icon">↑</div>
+        <span>Income</span>
+      </a>
+      <a href="#" class="nav-item" data-section="budget">
+        <div class="nav-icon">◈</div>
+        <span>Budget</span>
+      </a>
+      <span class="nav-section-label">Insights</span>
+      <a href="#" class="nav-item" data-section="analytics">
+        <div class="nav-icon">△</div>
+        <span>Analytics</span>
+      </a>
+      <a href="#" class="nav-item" data-section="recurring">
+        <div class="nav-icon">🔄</div>
+        <span>Recurring</span>
+      </a>
+      <a href="#" class="nav-item" data-section="report">
+        <div class="nav-icon">📊</div>
+        <span>AI Report</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill" id="sidebar-user">
+        <div class="user-avatar" id="sidebar-avatar">A</div>
+        <div class="user-info">
+          <span class="user-name" id="sidebar-username">User</span>
+          <span class="user-role">Personal Account</span>
+        </div>
+        <span class="status-dot"></span>
+      </div>
+      <!-- Accent color picker -->
+      <div class="accent-picker">
+        <span class="accent-label">Theme</span>
+        <div class="accent-swatches" id="accent-swatches">
+          <button class="accent-swatch active" data-accent="indigo" style="background:#4f46e5" title="Indigo"></button>
+          <button class="accent-swatch" data-accent="violet" style="background:#7c3aed" title="Violet"></button>
+          <button class="accent-swatch" data-accent="teal" style="background:#0d9488" title="Teal"></button>
+          <button class="accent-swatch" data-accent="rose" style="background:#f43f5e" title="Rose"></button>
+          <button class="accent-swatch" data-accent="amber" style="background:#f59e0b" title="Amber"></button>
+        </div>
+      </div>
+      <!-- Keyboard shortcut hint -->
+      <div class="kbd-hint">Press <kbd>?</kbd> for shortcuts</div>
+      <!-- Sign Out -->
+      <button class="logout-btn" id="signout-btn">
+        <span>⎋</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" id="hamburger">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-greeting">
+          <span id="topbar-greeting-text">Good morning,</span>
+          <strong id="topbar-name">User</strong>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <!-- Currency selector -->
+        <button class="icon-btn" id="voice-btn" title="Voice entry (speak expense)">
+          <span>🎤</span>
+        </button>
+        <button class="icon-btn" id="ocr-btn" title="Scan receipt (OCR)">
+          <span>🧾</span>
+        </button>
+        <select id="currency-select" class="currency-select" title="Select currency">
+          <option value="INR">₹ INR</option>
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
+          <option value="JPY">¥ JPY</option>
+        </select>
+        <button class="icon-btn" id="dark-mode-toggle" title="Toggle dark mode (T)">
+          <span id="theme-icon">☽</span>
+        </button>
+        <button class="icon-btn" id="import-csv-btn" title="Import from CSV">
+          <span>↑</span>
+        </button>
+        <button class="icon-btn" id="export-csv-btn" title="Export data as CSV">
+          <span>📋</span>
+        </button>
+        <button class="icon-btn" id="export-btn" title="Export data as JSON">
+          <span>↓</span>
+        </button>
+        <button class="icon-btn" id="export-pdf-btn" title="Export data as PDF">
+          <span>📄</span>
+        </button>
+        <button class="btn-primary add-expense-btn" id="open-add-modal" title="Add Expense (N)">
+          + Add Expense
+        </button>
+        <!-- Mobile: "more actions" button (hidden on desktop via CSS) -->
+        <button class="icon-btn topbar-more-btn" id="topbar-more-btn" title="More actions" style="display:none">
+          <span>⋯</span>
+        </button>
+      </div>
+    </header>
+    <!-- Hidden CSV input -->
+    <input type="file" id="csv-file-input" accept=".csv" style="display:none" />
+    <!-- Hidden OCR image input -->
+    <input type="file" id="ocr-file-input" accept="image/*" style="display:none" />
+
+    <!-- BUDGET ALERT BANNER -->
+    <div class="budget-alert-banner hidden" id="budget-alert-banner">
+      <span class="alert-icon">🔔</span>
+      <span id="budget-alert-text">Budget alert</span>
+      <button class="alert-dismiss" id="budget-alert-dismiss">✕</button>
+    </div>
+
+    <!-- PAGE: DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Dashboard</h1>
+          <p id="dashboard-subtitle">Here's your financial snapshot</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card card-blue">
+          <div class="stat-top">
+            <div class="stat-label">Total Expenses</div>
+            <div class="stat-icon-wrap">◈</div>
+          </div>
+          <div class="stat-value" id="stat-total">₹0</div>
+          <div class="stat-footer">
+            <div class="stat-sub" id="stat-total-sub">This month</div>
+          </div>
+        </div>
+        <div class="stat-card card-emerald">
+          <div class="stat-top">
+            <div class="stat-label">Total Income</div>
+            <div class="stat-icon-wrap">↑</div>
+          </div>
+          <div class="stat-value" id="stat-income">₹0</div>
+          <div class="stat-footer">
+            <div class="stat-sub">This month</div>
+          </div>
+        </div>
+        <div class="stat-card card-teal">
+          <div class="stat-top">
+            <div class="stat-label">Remaining Budget</div>
+            <div class="stat-icon-wrap">◎</div>
+          </div>
+          <div class="stat-value" id="stat-remaining">₹0</div>
+          <div class="stat-footer">
+            <div class="stat-sub">Across all categories</div>
+          </div>
+        </div>
+        <div class="stat-card card-violet">
+          <div class="stat-top">
+            <div class="stat-label">Transactions</div>
+            <div class="stat-icon-wrap">△</div>
+          </div>
+          <div class="stat-value" id="stat-count">0</div>
+          <div class="stat-footer">
+            <div class="stat-sub">Total records</div>
+          </div>
+        </div>
+        <div class="stat-card card-amber">
+          <div class="stat-top">
+            <div class="stat-label">Health Score</div>
+            <div class="stat-icon-wrap">⬡</div>
+          </div>
+          <div class="stat-value" id="stat-health">—</div>
+          <div class="stat-footer">
+            <div class="stat-sub" id="stat-health-label">Calculating...</div>
+          </div>
+        </div>
+        <div class="stat-card card-rose">
+          <div class="stat-top">
+            <div class="stat-label">Savings Goal</div>
+            <div class="stat-icon-wrap">🎯</div>
+          </div>
+          <div class="stat-value" id="stat-savings">—</div>
+          <div class="stat-footer">
+            <div class="stat-sub" id="stat-savings-label">Set a goal</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTHLY SUMMARY STRIP -->
+      <div class="monthly-summary" id="monthly-summary">
+        <div class="summary-item">
+          <span class="summary-label">vs Last Month</span>
+          <span class="summary-value" id="summary-vs-last">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <span class="summary-label">Biggest Expense</span>
+          <span class="summary-value" id="summary-biggest">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <span class="summary-label">Savings Rate</span>
+          <span class="summary-value" id="summary-savings-rate">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <span class="summary-label">Daily Avg</span>
+          <span class="summary-value" id="summary-daily-avg">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item savings-goal-item">
+          <span class="summary-label">Savings Goal</span>
+          <div class="savings-goal-input-row">
+            <input type="number" id="savings-goal-input" placeholder="Set goal..." min="0" step="1000" />
+            <button id="savings-goal-save" class="savings-goal-btn">Set</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INSIGHTS STRIP -->
+      <div class="insights-strip" id="insights-strip">
+        <span class="insights-label">💡 Insights</span>
+        <div class="insights-scroll" id="insights-list">
+          <span class="insight-chip">Add your first expense to get insights</span>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="charts-row">
+        <div class="chart-card wide">
+          <div class="chart-header">
+            <div class="chart-header-left">
+              <h3>Spending Trend</h3>
+              <div class="chart-meta">Daily expenditure over time</div>
+            </div>
+            <div class="chart-tabs">
+              <button class="chart-tab active" data-range="7">7D</button>
+              <button class="chart-tab" data-range="14">14D</button>
+              <button class="chart-tab" data-range="30">30D</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-header-left">
+              <h3>By Category</h3>
+              <div class="chart-meta">Current month breakdown</div>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="pie-chart"></canvas></div>
+          <div class="pie-legend" id="pie-legend"></div>
+        </div>
+      </div>
+
+      <!-- RECENT TRANSACTIONS -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>Recent Transactions</h3>
+          <a href="#" class="link-btn" data-nav="expenses">View all →</a>
+        </div>
+        <div id="recent-list" class="expense-list">
+          <div class="empty-state">
+            <div class="empty-icon">◎</div>
+            <p>No transactions yet</p>
+            <small>Add your first expense to get started</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: EXPENSES -->
+    <section class="page" id="page-expenses">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Expenses</h1>
+          <p>Manage and track all your transactions</p>
+        </div>
+        <button class="btn-primary" id="open-add-modal-expenses">+ Add Expense</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-bar-row1">
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="search-input" placeholder="Search expenses... (Press /)" />
+          </div>
+          <button class="filter-toggle-btn" id="filter-toggle-btn" title="Show filters">
+            <span>⚙</span> Filters
+          </button>
+          <button class="icon-btn" id="group-by-date-btn" title="Toggle date grouping" style="flex-shrink:0">⊞</button>
+        </div>
+        <div class="filter-bar-row2" id="filter-bar-row2">
+          <select id="filter-category" class="filter-select">
+            <option value="">All Categories</option>
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Bills">Bills</option>
+            <option value="Health">Health</option>
+            <option value="Other">Other</option>
+          </select>
+          <select id="filter-type" class="filter-select">
+            <option value="">All Types</option>
+            <option value="expense">Expenses</option>
+            <option value="income">Income</option>
+          </select>
+          <select id="sort-select" class="filter-select">
+            <option value="date-desc">Latest First</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="amount-desc">Highest Amount</option>
+            <option value="amount-asc">Lowest Amount</option>
+          </select>
+        </div>
+        <button class="btn-danger-soft" id="bulk-delete-btn" style="display:none">Delete Selected (<span id="bulk-count">0</span>)</button>
+      </div>
+      <!-- Select all bar -->
+      <div class="bulk-bar" id="bulk-bar" style="display:none">
+        <label class="checkbox-label">
+          <input type="checkbox" id="select-all-cb" /> Select all
+        </label>
+      </div>
+
+      <div id="expenses-list" class="expense-list">
+        <div class="empty-state">
+          <div class="empty-icon">◈</div>
+          <p>No expenses yet</p>
+          <small>Click "Add Expense" to record your first transaction</small>
+          <button class="btn-primary mt-16" id="empty-add-btn">+ Add Expense</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: BUDGET -->
+    <section class="page" id="page-budget">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Budget Manager</h1>
+          <p>Set and track your monthly category budgets</p>
+        </div>
+      </div>
+      <div class="budget-grid" id="budget-grid"></div>
+    </section>
+
+    <!-- PAGE: ANALYTICS -->
+    <section class="page" id="page-analytics">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Analytics</h1>
+          <p>Deep dive into your spending patterns</p>
+        </div>
+      </div>
+      <div class="analytics-grid">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <div class="chart-header-left">
+              <h3>Monthly Comparison</h3>
+              <div class="chart-meta">Last 6 months spending</div>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="monthly-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-header-left">
+              <h3>Category Breakdown</h3>
+              <div class="chart-meta">Current month</div>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="bar-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-header-left">
+              <h3>Daily Pattern</h3>
+              <div class="chart-meta">Spending by day of week</div>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="daily-chart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: INCOME -->
+    <section class="page" id="page-income">      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Income</h1>
+          <p>Track all your income sources</p>
+        </div>
+        <button class="btn-primary" id="open-add-income-btn">+ Add Income</button>
+      </div>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="stat-card card-emerald">
+          <div class="stat-top"><div class="stat-label">This Month</div><div class="stat-icon-wrap">↑</div></div>
+          <div class="stat-value" id="income-stat-month">₹0</div>
+          <div class="stat-footer"><div class="stat-sub">Total income</div></div>
+        </div>
+        <div class="stat-card card-teal">
+          <div class="stat-top"><div class="stat-label">Net Balance</div><div class="stat-icon-wrap">◎</div></div>
+          <div class="stat-value" id="income-stat-net">₹0</div>
+          <div class="stat-footer"><div class="stat-sub">Income − Expenses</div></div>
+        </div>
+        <div class="stat-card card-blue">
+          <div class="stat-top"><div class="stat-label">Savings Rate</div><div class="stat-icon-wrap">%</div></div>
+          <div class="stat-value" id="income-stat-rate">—</div>
+          <div class="stat-footer"><div class="stat-sub">Of income saved</div></div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>Income Records</h3>
+        </div>
+        <div id="income-list" class="expense-list">
+          <div class="empty-state">
+            <div class="empty-icon">↑</div>
+            <p>No income recorded yet</p>
+            <small>Add your salary, freelance or other income</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: RECURRING -->
+    <section class="page" id="page-recurring">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Recurring Expenses</h1>
+          <p>Auto-detected and manually marked subscriptions, rent, EMIs</p>
+        </div>
+        <button class="btn-primary" id="run-detection-btn">🔄 Run Detection</button>
+      </div>
+      <div class="recurring-stats" id="recurring-stats"></div>
+      <div class="section-card" style="margin-top:16px">
+        <div class="section-card-header">
+          <h3>Detected Recurring Expenses</h3>
+          <span class="badge badge-brand" id="recurring-count-badge">0 found</span>
+        </div>
+        <div id="recurring-list" class="expense-list">
+          <div class="empty-state">
+            <div class="empty-icon">🔄</div>
+            <p>No recurring patterns detected yet</p>
+            <small>Add more expenses or click "Run Detection"</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: AI REPORT -->
+    <section class="page" id="page-report">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>AI Financial Report</h1>
+          <p>Auto-generated monthly analysis and savings recommendations</p>
+        </div>
+        <button class="btn-primary" id="generate-report-btn">✨ Generate Report</button>
+      </div>
+      <div id="report-container">
+        <div class="empty-state" style="padding:80px 20px">
+          <div class="empty-icon">📊</div>
+          <p>No report generated yet</p>
+          <small>Click "Generate Report" to get your AI-powered financial analysis</small>
+          <button class="btn-primary mt-16" id="generate-report-btn-2">✨ Generate Report</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- OCR MODAL -->
+  <div class="modal-backdrop" id="ocr-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>🧾 Scan Receipt</h2>
+        <button class="modal-close" id="close-ocr-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="ocr-drop-zone" id="ocr-drop-zone">
+          <div class="ocr-drop-icon">🧾</div>
+          <p>Drop a receipt image here</p>
+          <small>JPG, PNG, WEBP supported</small>
+          <button class="btn-primary mt-16" id="ocr-browse-btn">Browse Image</button>
+        </div>
+        <div class="ocr-preview hidden" id="ocr-preview">
+          <img id="ocr-img" src="" alt="Receipt" />
+        </div>
+        <div class="ocr-progress hidden" id="ocr-progress">
+          <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="ocr-progress-fill"></div></div>
+          <span id="ocr-status-text">Processing...</span>
+        </div>
+        <div class="ocr-results hidden" id="ocr-results">
+          <h4>Extracted Details</h4>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="ocr-name" placeholder="Detected name..." />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount</label>
+              <input type="number" id="ocr-amount" placeholder="0" min="0" />
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="ocr-date" />
+            </div>
+          </div>
+          <div class="ocr-raw-text" id="ocr-raw-text"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="ocr-cancel">Cancel</button>
+        <button class="btn-primary hidden" id="ocr-add-btn">Add as Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOICE MODAL -->
+  <div class="modal-backdrop" id="voice-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>🎤 Voice Entry</h2>
+        <button class="modal-close" id="close-voice-modal">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center">
+        <div class="voice-orb" id="voice-orb">🎤</div>
+        <p class="voice-status" id="voice-status">Tap the mic to start</p>
+        <div class="voice-transcript" id="voice-transcript"></div>
+        <div class="voice-parsed hidden" id="voice-parsed">
+          <div class="voice-parsed-row"><span>Name:</span><strong id="vp-name">—</strong></div>
+          <div class="voice-parsed-row"><span>Amount:</span><strong id="vp-amount">—</strong></div>
+          <div class="voice-parsed-row"><span>Category:</span><strong id="vp-category">—</strong></div>
+        </div>
+        <small class="voice-hint">Say something like: "Spent 250 on petrol" or "Lunch 180 rupees food"</small>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:12px">
+        <button class="btn-ghost" id="voice-cancel">Cancel</button>
+        <button class="btn-primary hidden" id="voice-add-btn">Add Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT EXPENSE MODAL -->
+  <div class="modal-backdrop" id="expense-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Add Expense</h2>
+        <button class="modal-close" id="close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Type toggle: Expense / Income -->
+        <div class="type-toggle-wrap">
+          <div class="type-toggle" id="type-toggle">
+            <button class="type-btn active" data-type="expense">↓ Expense</button>
+            <button class="type-btn" data-type="income">↑ Income</button>
+          </div>
+        </div>
+        <input type="hidden" id="expense-type" value="expense" />
+
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="expense-name" placeholder="e.g. Lunch at Café" autocomplete="off" />
+          <div class="suggestion-chip hidden" id="suggestion-chip"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount (<span id="modal-currency-symbol">₹</span>)</label>
+            <input type="number" id="expense-amount" placeholder="0" min="0" step="1" />
+            <div class="amount-formatted" id="amount-formatted"></div>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="expense-date" />
+          </div>
+        </div>
+        <div class="form-group" id="category-group">
+          <label>Category</label>
+          <div class="category-picker" id="category-picker">
+            <button type="button" class="cat-btn" data-cat="Food">🍔 Food</button>
+            <button type="button" class="cat-btn" data-cat="Transport">🚗 Transport</button>
+            <button type="button" class="cat-btn" data-cat="Shopping">🛍 Shopping</button>
+            <button type="button" class="cat-btn" data-cat="Bills">💡 Bills</button>
+            <button type="button" class="cat-btn" data-cat="Health">🏥 Health</button>
+            <button type="button" class="cat-btn" data-cat="Other">📦 Other</button>
+          </div>
+          <input type="hidden" id="expense-category" value="" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tags <span class="optional">(optional)</span></label>
+            <input type="text" id="expense-tags" placeholder="work, personal, trip..." autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>Recurring</label>
+            <select id="expense-recurring" class="filter-select" style="width:100%;height:42px">
+              <option value="">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Note <span class="optional">(optional)</span></label>
+          <input type="text" id="expense-note" placeholder="Add a note..." autocomplete="off" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn-primary" id="modal-submit">Save</button>
+      </div>
+      <input type="hidden" id="edit-expense-id" value="" />
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div class="modal-backdrop" id="delete-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>Delete Expense?</h2>
+        <button class="modal-close" id="close-delete-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-secondary)">This action cannot be undone. Are you sure you want to delete this expense?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="cancel-delete">Cancel</button>
+        <button class="btn-danger" id="confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottom-nav" aria-label="Mobile navigation">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-item active" data-section="dashboard" aria-label="Dashboard">
+        <span class="bnav-icon">⬡</span>
+        <span>Home</span>
+      </button>
+      <button class="bottom-nav-item" data-section="expenses" aria-label="Expenses">
+        <span class="bnav-icon">◎</span>
+        <span>Expenses</span>
+      </button>
+      <!-- FAB: Add Expense -->
+      <button class="bottom-nav-fab" id="mobile-fab" aria-label="Add expense">+</button>
+      <button class="bottom-nav-item" data-section="analytics" aria-label="Analytics">
+        <span class="bnav-icon">△</span>
+        <span>Analytics</span>
+      </button>
+      <button class="bottom-nav-item" data-section="budget" aria-label="Budget">
+        <span class="bnav-icon">◈</span>
+        <span>Budget</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MOBILE ACTION SHEET (overflow actions) -->
+  <div class="mobile-action-backdrop" id="mobile-action-backdrop"></div>
+  <div class="mobile-action-menu" id="mobile-action-menu">
+    <div class="mobile-action-menu-handle"></div>
+    <h4>Quick Actions</h4>
+    <div class="mobile-action-grid">
+      <button class="mobile-action-tile" id="mob-voice-btn">
+        <span class="tile-icon">🎤</span>
+        <span>Voice</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-ocr-btn">
+        <span class="tile-icon">🧾</span>
+        <span>Scan</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-income-btn">
+        <span class="tile-icon">↑</span>
+        <span>Income</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-report-btn">
+        <span class="tile-icon">📊</span>
+        <span>Report</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-export-csv">
+        <span class="tile-icon">📋</span>
+        <span>Export CSV</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-import-csv">
+        <span class="tile-icon">↑</span>
+        <span>Import CSV</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-export-json">
+        <span class="tile-icon">↓</span>
+        <span>Export JSON</span>
+      </button>
+      <button class="mobile-action-tile" id="mob-export-pdf">
+        <span class="tile-icon">📄</span>
+        <span>PDF</span>
+      </button>
+      <button class="mobile-action-tile signout-tile" id="mob-signout-btn">
+        <span class="tile-icon">⎋</span>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KEYBOARD SHORTCUTS OVERLAY -->
+  <div class="modal-backdrop" id="shortcuts-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>Keyboard Shortcuts</h2>
+        <button class="modal-close" id="close-shortcuts-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcut-list">
+          <div class="shortcut-item"><kbd>N</kbd><span>New expense</span></div>
+          <div class="shortcut-item"><kbd>T</kbd><span>Toggle dark mode</span></div>
+          <div class="shortcut-item"><kbd>/</kbd><span>Focus search</span></div>
+          <div class="shortcut-item"><kbd>Esc</kbd><span>Close modal</span></div>
+          <div class="shortcut-item"><kbd>?</kbd><span>Show shortcuts</span></div>
+          <div class="shortcut-item"><kbd>1</kbd><span>Dashboard</span></div>
+          <div class="shortcut-item"><kbd>2</kbd><span>Expenses</span></div>
+          <div class="shortcut-item"><kbd>3</kbd><span>Income</span></div>
+          <div class="shortcut-item"><kbd>4</kbd><span>Budget</span></div>
+          <div class="shortcut-item"><kbd>5</kbd><span>Analytics</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNDO DELETE BAR -->
+  <div class="undo-bar hidden" id="undo-bar">
+    <span>Expense deleted</span>
+    <button id="undo-delete-btn" class="undo-btn">Undo</button>
+  </div>
+
+  <script>
+    /* ── AUTH GUARD (Supabase) ───────────────────────────
+       Checks Supabase session. Guest mode bypasses check.
+       Syncs cloud data into localStorage before app boots. */
+    (async function authGuard() {
+      // Guest mode — skip Supabase entirely
+      if (isGuestMode()) return;
+
+      try {
+        const session = await sbGetSession();
+        if (!session) {
+          window.location.replace('login.html');
+          return;
+        }
+        // Sync latest data from Supabase into localStorage
+        // so the existing script.js loadData() reads up-to-date rows
+        await syncFromSupabase(session.user.id);
+
+        // Keep Supabase session token accessible for script.js hooks
+        window.__sbUserId = session.user.id;
+      } catch (e) {
+        console.error('[FinFlow] Auth guard error:', e);
+        window.location.replace('login.html');
+      }
+    })();
+  </script>
+  <script src="script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    /* ── MOBILE NAVIGATION ──────────────────────────────
+       Bottom nav, FAB, and action sheet wiring           */
+    (function initMobileNav() {
+      /* Bottom nav items → navigate sections */
+      document.querySelectorAll('.bottom-nav-item[data-section]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.bottom-nav-item').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          if (typeof navigateTo === 'function') navigateTo(btn.dataset.section);
+        });
+      });
+
+      /* FAB → open add expense modal */
+      var fab = document.getElementById('mobile-fab');
+      if (fab) {
+        fab.addEventListener('click', function() {
+          if (typeof openAddModal === 'function') openAddModal();
+        });
+      }
+
+      /* Topbar more button → open action sheet */
+      var moreBtn  = document.getElementById('topbar-more-btn');
+      var menu     = document.getElementById('mobile-action-menu');
+      var backdrop = document.getElementById('mobile-action-backdrop');
+
+      function openActionSheet() {
+        if (menu) menu.classList.add('open');
+        if (backdrop) backdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeActionSheet() {
+        if (menu) menu.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      if (moreBtn)  moreBtn.addEventListener('click', openActionSheet);
+      if (backdrop) backdrop.addEventListener('click', closeActionSheet);
+
+      /* Wire action sheet tiles to existing topbar button click handlers */
+      var tileMap = [
+        ['mob-voice-btn',   '#voice-btn'],
+        ['mob-ocr-btn',     '#ocr-btn'],
+        ['mob-export-csv',  '#export-csv-btn'],
+        ['mob-import-csv',  '#import-csv-btn'],
+        ['mob-export-json', '#export-btn'],
+        ['mob-export-pdf',  '#export-pdf-btn'],
+      ];
+      tileMap.forEach(function(pair) {
+        var mobEl     = document.getElementById(pair[0]);
+        var desktopEl = document.querySelector(pair[1]);
+        if (mobEl && desktopEl) {
+          mobEl.addEventListener('click', function() {
+            closeActionSheet();
+            setTimeout(function() { desktopEl.click(); }, 80);
+          });
+        }
+      });
+
+      /* Income tile */
+      var mobIncome = document.getElementById('mob-income-btn');
+      if (mobIncome) {
+        mobIncome.addEventListener('click', function() {
+          closeActionSheet();
+          if (typeof navigateTo === 'function') navigateTo('income');
+          document.querySelectorAll('.bottom-nav-item').forEach(function(b) { b.classList.remove('active'); });
+        });
+      }
+
+      /* Report tile */
+      var mobReport = document.getElementById('mob-report-btn');
+      if (mobReport) {
+        mobReport.addEventListener('click', function() {
+          closeActionSheet();
+          if (typeof navigateTo === 'function') navigateTo('report');
+          document.querySelectorAll('.bottom-nav-item').forEach(function(b) { b.classList.remove('active'); });
+        });
+      }
+
+      /* Keep bottom nav in sync when sidebar nav items are clicked */
+      document.querySelectorAll('.nav-item[data-section]').forEach(function(navItem) {
+        navItem.addEventListener('click', function() {
+          var section = navItem.dataset.section;
+          document.querySelectorAll('.bottom-nav-item[data-section]').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.section === section);
+          });
+        });
+      });
+
+      /* Filter bar toggle */
+      var filterToggleBtn = document.getElementById('filter-toggle-btn');
+      var filterRow2      = document.getElementById('filter-bar-row2');
+      if (filterToggleBtn && filterRow2) {
+        filterToggleBtn.addEventListener('click', function() {
+          var open = filterRow2.classList.toggle('open');
+          filterToggleBtn.innerHTML = open
+            ? '<span>✕</span> Hide'
+            : '<span>⚙</span> Filters';
+        });
+      }
+
+      /* Sign Out button (sidebar) */
+      var signoutBtn = document.getElementById('signout-btn');
+      if (signoutBtn) {
+        signoutBtn.addEventListener('click', async function() {
+          if (!isGuestMode()) {
+            try { await sbSignOut(); } catch(_) {}
+          }
+          clearGuestMode();
+          localStorage.removeItem('finflow_auth_session');
+          localStorage.removeItem('finflow_auth_remember');
+          window.location.href = 'login.html';
+        });
+      }
+
+      /* Sign Out tile (action sheet) */
+      var mobSignout = document.getElementById('mob-signout-btn');
+      if (mobSignout) {
+        mobSignout.addEventListener('click', async function() {
+          if (!isGuestMode()) {
+            try { await sbSignOut(); } catch(_) {}
+          }
+          clearGuestMode();
+          localStorage.removeItem('finflow_auth_session');
+          localStorage.removeItem('finflow_auth_remember');
+          window.location.href = 'login.html';
+        });
+      }
+    })();
+  </script>
+
+</body>
+</html>

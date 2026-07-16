@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>FinFlow — Sign In</title>
+  <meta name="description" content="FinFlow – Secure login to your enterprise finance platform" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="login.css" />
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- FinFlow Supabase client (must load before auth.js) -->
+  <script src="supabase.js"></script>
+</head>
+<body>
+
+  <!-- ── LAMP CANVAS (animated background) ── -->
+  <canvas id="lamp-canvas"></canvas>
+
+  <!-- ── FLOATING PARTICLES ── -->
+  <div class="particles" id="particles"></div>
+
+  <!-- ── GRID OVERLAY ── -->
+  <div class="grid-overlay"></div>
+
+  <!-- ── AUTH CONTAINER ── -->
+  <div class="auth-wrapper">
+
+    <!-- Left branding panel -->
+    <div class="auth-brand">
+      <div class="brand-content">
+        <div class="brand-logo">
+          <div class="logo-icon">◈</div>
+          <span class="logo-text">FinFlow</span>
+        </div>
+        <h1 class="brand-headline">Your finances,<br /><span class="gradient-text">crystal clear.</span></h1>
+        <p class="brand-subtext">Enterprise-grade personal finance tracking with AI-powered insights, real-time analytics, and smart budgeting tools.</p>
+
+        <div class="brand-features">
+          <div class="feature-item">
+            <div class="feature-dot"></div>
+            <span>Smart expense categorisation</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-dot"></div>
+            <span>AI-generated financial reports</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-dot"></div>
+            <span>Real-time budget alerts</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-dot"></div>
+            <span>Voice & OCR receipt scanning</span>
+          </div>
+        </div>
+
+        <div class="brand-stats">
+          <div class="brand-stat">
+            <span class="brand-stat-val">100%</span>
+            <span class="brand-stat-label">Private & local</span>
+          </div>
+          <div class="brand-stat-divider"></div>
+          <div class="brand-stat">
+            <span class="brand-stat-val">∞</span>
+            <span class="brand-stat-label">Transactions</span>
+          </div>
+          <div class="brand-stat-divider"></div>
+          <div class="brand-stat">
+            <span class="brand-stat-val">0₹</span>
+            <span class="brand-stat-label">Always free</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right auth card -->
+    <div class="auth-panel">
+      <div class="auth-card" id="auth-card">
+
+        <!-- Tab switcher: Login / Register -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login" data-tab="login">Sign In</button>
+          <button class="auth-tab" id="tab-register" data-tab="register">Create Account</button>
+          <div class="tab-slider" id="tab-slider"></div>
+        </div>
+
+        <!-- ── LOGIN FORM ── -->
+        <form class="auth-form active" id="form-login" autocomplete="off" novalidate>
+          <div class="form-header">
+            <h2>Welcome back</h2>
+            <p>Sign in to your FinFlow account</p>
+          </div>
+
+          <div class="field-group">
+            <label for="login-email">Email address</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉</span>
+              <input
+                type="email"
+                id="login-email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+            <span class="field-error" id="login-email-error"></span>
+          </div>
+
+          <div class="field-group">
+            <label for="login-password">
+              Password
+              <a href="#" class="forgot-link" id="forgot-link">Forgot password?</a>
+            </label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input
+                type="password"
+                id="login-password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="toggle-pass" id="toggle-login-pass" aria-label="Toggle password visibility">
+                <span id="pass-eye">👁</span>
+              </button>
+            </div>
+            <span class="field-error" id="login-pass-error"></span>
+          </div>
+
+          <div class="form-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember-me" />
+              <span class="checkbox-custom"></span>
+              Remember me for 30 days
+            </label>
+          </div>
+
+          <button type="submit" class="btn-auth" id="login-submit">
+            <span class="btn-text">Sign In</span>
+            <span class="btn-loader hidden" id="login-loader">
+              <span class="spinner"></span>
+            </span>
+            <span class="btn-arrow">→</span>
+          </button>
+
+          <div class="auth-divider">
+            <span>or continue with</span>
+          </div>
+
+          <!-- Google OAuth -->
+          <button type="button" class="google-login-btn" id="google-login">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" class="google-icon" />
+            Continue with Google
+          </button>
+
+          <div class="auth-divider" style="margin-top:12px">
+            <span>quick access</span>
+          </div>
+
+          <div class="social-row">
+            <button type="button" class="social-btn" id="demo-login">
+              <span>⚡</span> Demo Account
+            </button>
+            <button type="button" class="social-btn" id="guest-login">
+              <span>👤</span> Guest Mode
+            </button>
+          </div>
+
+        </form>
+
+        <!-- ── REGISTER FORM ── -->
+        <form class="auth-form" id="form-register" autocomplete="off" novalidate>
+          <div class="form-header">
+            <h2>Create account</h2>
+            <p>Set up your free FinFlow account</p>
+          </div>
+
+          <div class="field-group">
+            <label for="reg-name">Full name</label>
+            <div class="input-wrap">
+              <span class="input-icon">👤</span>
+              <input
+                type="text"
+                id="reg-name"
+                placeholder="Rahul Mishra"
+                autocomplete="name"
+                maxlength="40"
+                required
+              />
+            </div>
+            <span class="field-error" id="reg-name-error"></span>
+          </div>
+
+          <div class="field-group">
+            <label for="reg-email">Email address</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉</span>
+              <input
+                type="email"
+                id="reg-email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+            <span class="field-error" id="reg-email-error"></span>
+          </div>
+
+          <div class="field-group">
+            <label for="reg-password">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input
+                type="password"
+                id="reg-password"
+                placeholder="Min. 8 characters"
+                autocomplete="new-password"
+                required
+              />
+              <button type="button" class="toggle-pass" id="toggle-reg-pass" aria-label="Toggle password visibility">
+                <span id="reg-pass-eye">👁</span>
+              </button>
+            </div>
+            <div class="password-strength" id="pass-strength">
+              <div class="strength-bar">
+                <div class="strength-fill" id="strength-fill"></div>
+              </div>
+              <span class="strength-label" id="strength-label">Enter a password</span>
+            </div>
+            <span class="field-error" id="reg-pass-error"></span>
+          </div>
+
+          <div class="field-group">
+            <label for="reg-confirm">Confirm password</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input
+                type="password"
+                id="reg-confirm"
+                placeholder="Repeat your password"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+            <span class="field-error" id="reg-confirm-error"></span>
+          </div>
+
+          <div class="form-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="agree-terms" required />
+              <span class="checkbox-custom"></span>
+              I agree to the <a href="#" class="inline-link">Terms of Service</a>
+            </label>
+          </div>
+
+          <button type="submit" class="btn-auth" id="register-submit">
+            <span class="btn-text">Create Account</span>
+            <span class="btn-loader hidden" id="register-loader">
+              <span class="spinner"></span>
+            </span>
+            <span class="btn-arrow">→</span>
+          </button>
+
+          <div class="auth-divider" style="margin-top:4px">
+            <span>or sign up with</span>
+          </div>
+          <button type="button" class="google-login-btn" id="google-register">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" class="google-icon" />
+            Continue with Google
+          </button>
+
+        </form>
+
+        <!-- ── FORGOT PASSWORD PANEL ── -->
+        <div class="auth-form" id="form-forgot">
+          <div class="form-header">
+            <button class="back-btn" id="back-to-login">← Back to sign in</button>
+            <h2>Reset password</h2>
+            <p>Enter your email and we'll send you a reset link</p>
+          </div>
+          <div class="field-group">
+            <label for="forgot-email">Email address</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉</span>
+              <input type="email" id="forgot-email" placeholder="you@example.com" />
+            </div>
+            <span class="field-error" id="forgot-email-error"></span>
+          </div>
+          <button type="button" class="btn-auth" id="forgot-submit">
+            <span class="btn-text">Send Reset Link</span>
+            <span class="btn-arrow">→</span>
+          </button>
+          <div class="reset-success hidden" id="reset-success">
+            <div class="reset-icon">✅</div>
+            <p>Check your inbox! A password reset link has been sent to your email.</p>
+          </div>
+        </div>
+
+        <!-- Toast inside card -->
+        <div class="auth-toast hidden" id="auth-toast"></div>
+
+      </div>
+
+      <!-- Footer note -->
+      <p class="auth-footer-note">
+        Secured by <strong>Supabase</strong>. Your data is encrypted in the cloud.
+      </p>
+    </div>
+
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>
