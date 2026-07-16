@@ -1839,15 +1839,19 @@ kbd {
 
   /* ── MODALS ────────────────────────────────────────── */
   .modal-backdrop { padding: 0; align-items: flex-end; background: rgba(10,15,30,.7); }
-  .modal {
+.modal {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     max-width: 100%;
-    max-height: 85vh;
+
+    height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 20px);
+
     overflow-y: auto;
     animation: slideUpSheet .28s cubic-bezier(.4,0,.2,1);
+}
   }
   .modal-header { padding: 18px 20px 14px; }
-  .modal-body { padding: 16px 20px 90px; }
+  .modal-body { padding: 16px 20px 130px; }
   .modal-footer {  position:sticky;
     bottom:0;
     background:var(--surface);
