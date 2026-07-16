@@ -1044,9 +1044,7 @@ img { max-width: 100%; }
   .form-row { grid-template-columns: 1fr; }
   .budget-grid { grid-template-columns: 1fr; }
   .add-expense-btn { padding: 9px 12px; font-size: .8rem; }
-  .modal { border-radius: var(--radius-lg); }
   .expense-actions { opacity: 1; }
-  .modal-backdrop { padding: 12px; }
 }
 
 @media (max-width: 400px) {
@@ -1838,30 +1836,34 @@ kbd {
   .budget-card { padding: 14px; }
 
   /* ── MODALS ────────────────────────────────────────── */
-  .modal-backdrop { padding: 0; align-items: flex-end; background: rgba(10,15,30,.7); }
-.modal {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+    background: rgba(10,15,30,.7);
+    /* stop backdrop above the bottom nav */
+    padding-bottom: 72px;
+  }
+  .modal {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 20px);
-    max-height: calc(100dvh - 20px);
+    max-height: calc(92vh - 72px);
     overflow: hidden;
-}
-
-.modal-body {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    animation: slideUpSheet .28s cubic-bezier(.4,0,.2,1);
+  }
+  .modal-body {
     flex: 1;
     overflow-y: auto;
-    padding: 16px 20px 120px;
-}
-
-.modal-footer {
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 20px 8px;
+  }
+  .modal-footer {
     flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
-    z-index: 9999;
-}
+    padding: 14px 20px 18px;
+    z-index: 1;
+  }
   /* handle bar at top of modal sheet */
   .modal::before {
     content: '';
@@ -1930,7 +1932,7 @@ kbd {
 @supports (padding: env(safe-area-inset-bottom)) {
   @media (max-width: 640px) {
     .bottom-nav { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
-    .modal { padding-bottom: env(safe-area-inset-bottom); }
+    /* modal sits above bottom nav, safe-area handled by backdrop padding */
   }
 }
 
@@ -2103,21 +2105,6 @@ kbd {
   }
   .expense-item.income-item:active {
     border-left-color: var(--emerald-500);
-  }
-}
-
-/* ── MODAL: prevent keyboard from pushing layout ─────── */
-@media (max-width: 640px) {
-  .modal-backdrop {
-    /* iOS keyboard fix */
-    position: fixed;
-    align-items: flex-end;
-  }
-  .modal {
-    /* Allow scrolling inside modal when keyboard open */
-    max-height: 85vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 }
 
