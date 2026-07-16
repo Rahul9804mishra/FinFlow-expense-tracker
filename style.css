@@ -1842,13 +1842,17 @@ kbd {
   .modal {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     max-width: 100%;
-    max-height: 92vh;
+    max-height: 85vh;
     overflow-y: auto;
     animation: slideUpSheet .28s cubic-bezier(.4,0,.2,1);
   }
   .modal-header { padding: 18px 20px 14px; }
-  .modal-body { padding: 16px 20px; }
-  .modal-footer { padding: 12px 20px 20px; }
+  .modal-body { padding: 16px 20px 90px; }
+  .modal-footer {  position:sticky;
+    bottom:0;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    z-index:20;}
   /* handle bar at top of modal sheet */
   .modal::before {
     content: '';
